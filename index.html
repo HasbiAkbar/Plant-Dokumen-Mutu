@@ -47,7 +47,9 @@
 .auth-field input:focus{border-color:#1769aa;box-shadow:0 0 0 3px #1769aa18}
 .auth-primary{width:100%;border:0;border-radius:9px;padding:13px;background:#1769aa;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px}
 .auth-primary:disabled{opacity:.6;cursor:wait}
-.auth-link{border:0;background:none;color:#1769aa;cursor:pointer;padding:12px 0 0;font:inherit;font-size:13px}
+.auth-links{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 20px;margin-top:10px}
+.auth-link{border:0;background:none;color:#1769aa;cursor:pointer;padding:5px 2px;font:inherit;font-size:13px;line-height:1.5;white-space:nowrap}
+.auth-link:hover{text-decoration:underline;color:#0f4f83}
 .auth-message{display:none;padding:10px 12px;border-radius:8px;background:#fff3e8;color:#9a5410;font-size:12px;margin:12px 0}
 .auth-message.success{display:block;background:#eaf7f0;color:#16845b}
 .auth-message.error{display:block;background:#fff0f0;color:#b42318}
@@ -83,9 +85,11 @@
       <div class="auth-field"><label for="loginNik">NIK</label><input id="loginNik" type="text" inputmode="numeric" autocomplete="username" required placeholder="Masukkan NIK karyawan"></div>
       <div class="auth-field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Masukkan password"></div>
       <button class="auth-primary" id="loginButton" type="submit">Masuk</button>
-      <button class="auth-link" type="button" id="forgotButton">Lupa password?</button>
-      <button class="auth-link" type="button" id="changePasswordLink">Ganti password</button>
-      <button class="auth-link" type="button" id="showSignupButton">Buat Akun Baru</button>
+      <div class="auth-links">
+        <button class="auth-link" type="button" id="forgotButton">Lupa password?</button>
+        <button class="auth-link" type="button" id="changePasswordLink">Ganti password</button>
+        <button class="auth-link" type="button" id="showSignupButton">Buat Akun Baru</button>
+      </div>
     </form>
     <form id="changePasswordForm" style="display:none">
       <div class="auth-field"><label for="changeNik">NIK</label><input id="changeNik" type="text" inputmode="numeric" autocomplete="username" required placeholder="Masukkan NIK akun"></div>
@@ -110,7 +114,7 @@
       <div class="auth-field"><label for="confirmPassword">Konfirmasi password baru</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Ulangi password baru"></div>
       <button class="auth-primary" id="resetButton" type="submit">Simpan password baru</button>
     </form>
-    <div class="auth-footer">Akses internal · System Development Plant</div>
+    <div class="auth-footer">© - System Development Plant 2027</div>
   </div>
 </div>
 <div class="account-modal" id="changePasswordModal">
