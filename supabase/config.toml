@@ -8,3 +8,6 @@ major_version = 15
 
 [db.seed]
 enabled = false
+
+[remotes.production]
+project_id = "svinpcckscblhehdalxo"
