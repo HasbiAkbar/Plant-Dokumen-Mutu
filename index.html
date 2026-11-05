@@ -193,7 +193,7 @@ async function checkSupabaseConnection(){
       const {error}=await supabaseClient.from("profiles").select("id").eq("id",session.user.id).maybeSingle();
       if(error)throw new Error("Database: "+error.message);
     }
-    el.textContent="Supabase terhubung";
+    el.textContent="Online";
     el.style.color="#16845b";
   }catch(error){
     el.textContent="Koneksi Supabase gagal";
