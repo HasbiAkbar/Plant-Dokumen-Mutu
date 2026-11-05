@@ -166,8 +166,18 @@ async function checkSupabaseConnection(){
   el.textContent="Mengecek database…";
   el.style.color="#718096";
   try{
-    const response=await fetch(SUPABASE_URL+"/auth/v1/health");
-    if(!response.ok)throw new Error("HTTP "+response.status);
+    // Verify the configured Supabase Auth endpoint using the public client key.
+    const response=await fetch(SUPABASE_URL+"/auth/v1/settings",{
+      method:"GET",
+      headers:{"apikey":SUPABASE_PUBLISHABLE_KEY}
+    });
+    if(!response.ok)throw new Error("Supabase Auth HTTP "+response.status);
+    // When a user is signed in, also verify the database and profile access.
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(session){
+      const {error}=await supabaseClient.from("profiles").select("id").eq("id",session.user.id).maybeSingle();
+      if(error)throw new Error("Database: "+error.message);
+    }
     el.textContent="Supabase terhubung";
     el.style.color="#16845b";
   }catch(error){
