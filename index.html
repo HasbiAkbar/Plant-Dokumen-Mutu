@@ -52,6 +52,26 @@
 .auth-message.success{display:block;background:#eaf7f0;color:#16845b}
 .auth-message.error{display:block;background:#fff0f0;color:#b42318}
 .auth-footer{margin-top:22px;color:#718096;font-size:11px;text-align:center}
+.account-menu{position:relative;display:flex;align-items:center;gap:10px}
+.profile-trigger{display:flex;align-items:center;gap:9px;border:0;background:transparent;cursor:pointer;color:var(--ink);font:inherit;padding:6px 8px;border-radius:10px}
+.profile-trigger:hover{background:#f1f6fb}
+.profile-avatar{width:38px;height:38px;border-radius:50%;background:#dcecf9;color:var(--blue);display:grid;place-items:center;font-weight:800;overflow:hidden;border:1px solid #d7e5f2}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-caret{font-size:11px;color:#718096}
+.profile-dropdown{position:absolute;right:0;top:calc(100% + 9px);width:230px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 35px #102b4e22;padding:8px;z-index:20;display:none}
+.profile-dropdown.open{display:block}
+.profile-meta{padding:10px 11px;border-bottom:1px solid var(--line);margin-bottom:5px}
+.profile-meta b{display:block;font-size:13px}.profile-meta small{display:block;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.profile-action{display:flex;width:100%;align-items:center;gap:10px;padding:10px 11px;border:0;border-radius:8px;background:white;color:#29445f;text-align:left;font:inherit;font-size:13px;cursor:pointer}
+.profile-action:hover{background:#f1f6fb}.profile-action.danger{color:#b42318}
+.profile-upload{display:none}
+.account-modal{position:fixed;inset:0;z-index:10001;background:#0b1e32a8;display:none;place-items:center;padding:16px}
+.account-modal.open{display:grid}
+.account-modal-card{width:min(440px,100%);background:#fff;border-radius:14px;padding:24px;box-shadow:0 20px 60px #0003}
+.account-modal-card h2{font-size:19px;margin:0 0 6px;color:#102b4e}
+.account-modal-card p{font-size:12px;color:#718096;margin:0 0 16px}
+.account-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.btn-danger{background:#b42318;color:#fff}
 </style>
 <div id="authGate" class="auth-gate">
   <div class="auth-card">
@@ -82,6 +102,20 @@
     <div class="auth-footer">Akses internal · System Development Plant</div>
   </div>
 </div>
+<div class="account-modal" id="changePasswordModal">
+  <div class="account-modal-card">
+    <h2>Ganti Password</h2>
+    <p>Masukkan password lama untuk verifikasi, lalu buat password baru.</p>
+    <div id="dashboardPasswordMessage" class="auth-message"></div>
+    <form id="dashboardChangePasswordForm">
+      <div class="auth-field"><label for="dashboardOldPassword">Password lama</label><input id="dashboardOldPassword" type="password" autocomplete="current-password" required></div>
+      <div class="auth-field"><label for="dashboardNewPassword">Password baru</label><input id="dashboardNewPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Minimal 8 karakter"></div>
+      <div class="auth-field"><label for="dashboardConfirmPassword">Konfirmasi password baru</label><input id="dashboardConfirmPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div class="account-modal-actions"><button type="button" class="btn secondary" id="cancelDashboardPassword">Batal</button><button type="submit" class="btn" id="saveDashboardPassword">Perbarui Password</button></div>
+    </form>
+  </div>
+</div>
+</div>
 </head>
 <body>
 <div class="app">
@@ -93,7 +127,16 @@
 <button data-page="notifications"><span class="ico">♧</span> Notifikasi <span id="notificationBadge" class="navbadge">0</span></button>
 <button data-page="team"><span class="ico">♙</span> Tim & PIC</button>
 </nav><div class="sidefoot">COPYRIGHT - SYSTEM DEVELOPMENT PLANT 2027</div></aside>
-<main class="main"><header class="topbar"><div class="crumb">Workspace / <b id="crumb">Dashboard</b></div><div class="user"><div class="avatar">HA</div><span>Plant HO</span><small id="supabaseStatus" style="font-size:11px;font-weight:600;margin-left:10px">Menghubungkan database…</small></div></header>
+<main class="main"><header class="topbar"><div class="crumb">Workspace / <b id="crumb">Dashboard</b></div><div class="user"><div class="account-menu">
+<button type="button" class="profile-trigger" id="profileTrigger" aria-label="Menu profil"><span class="profile-avatar" id="profileAvatar">SY</span><span id="profileName">Sysdev</span><span class="profile-caret">▾</span></button>
+<div class="profile-dropdown" id="profileDropdown">
+<div class="profile-meta"><b id="profileMenuName">Sysdev</b><small id="profileMenuEmail"></small></div>
+<button type="button" class="profile-action" id="changePasswordDashboard">🔒 Ganti Password</button>
+<button type="button" class="profile-action" id="changePhotoButton">📷 Ganti Foto Profil</button>
+<button type="button" class="profile-action danger" id="logoutButton">↪ Log Out</button>
+</div>
+<input class="profile-upload" id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp">
+</div><small id="supabaseStatus" style="font-size:11px;font-weight:600;margin-left:10px">Menghubungkan database…</small></div></header>
 <div class="content">
 <section id="dashboard" class="page"><div class="pagehead"><div><div class="eyebrow">PROJECT OVERVIEW</div><h1>Dashboard Dokumen Mutu Plant</h1><p class="sub">Monitoring penyusunan dan pemenuhan dokumen mutu Departemen Plant 2027.</p></div></div>
 <div class="notice"><b>Sumber data:</b> Dashboard terhubung dengan Daftar Induk Dokumen hasil import Excel dan data penugasan. Angka akan diperbarui otomatis setiap kali daftar dokumen diimpor atau penugasan dibuat/diperbarui.</div>
@@ -145,15 +188,82 @@ async function showAuth(mode,message="",kind=""){
 async function initializeAuthentication(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   if(session){
-    const {data:profile,error}=await supabaseClient.from("profiles").select("full_name,role,is_active").eq("id",session.user.id).single();
+    const {data:profile,error}=await supabaseClient.from("profiles").select("full_name,role,is_active,avatar_url").eq("id",session.user.id).single();
     if(error||!profile||!profile.is_active){await supabaseClient.auth.signOut();await showAuth("login","Akun belum memiliki profil aktif. Hubungi Admin.","error");return;}
     document.getElementById("authGate").style.display="none";
-    const name=document.querySelector(".user span");if(name)name.textContent=profile.full_name||session.user.email;
-    const avatar=document.querySelector(".avatar");if(avatar)avatar.textContent=(profile.full_name||"U").slice(0,2).toUpperCase();
+    const displayName=profile.full_name||session.user.email;
+    document.getElementById("profileName").textContent=displayName;
+    document.getElementById("profileMenuName").textContent=displayName;
+    document.getElementById("profileMenuEmail").textContent=session.user.email||"";
+    const avatar=document.getElementById("profileAvatar");
+    if(avatar){avatar.innerHTML=profile.avatar_url?'<img src="'+profile.avatar_url+'" alt="Foto profil">':(displayName||"U").slice(0,2).toUpperCase();}
     return;
   }
   await showAuth(location.hash.includes("type=recovery")?"reset":"login");
 }
+document.getElementById("profileTrigger").addEventListener("click",()=>document.getElementById("profileDropdown").classList.toggle("open"));
+document.addEventListener("click",e=>{const menu=document.querySelector(".account-menu");if(menu&&!menu.contains(e.target))document.getElementById("profileDropdown").classList.remove("open");});
+document.getElementById("changePasswordDashboard").addEventListener("click",()=>{
+  document.getElementById("profileDropdown").classList.remove("open");
+  document.getElementById("dashboardPasswordMessage").textContent="";
+  document.getElementById("dashboardPasswordMessage").className="auth-message";
+  document.getElementById("dashboardChangePasswordForm").reset();
+  document.getElementById("changePasswordModal").classList.add("open");
+});
+document.getElementById("cancelDashboardPassword").addEventListener("click",()=>document.getElementById("changePasswordModal").classList.remove("open"));
+document.getElementById("dashboardChangePasswordForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const oldPassword=document.getElementById("dashboardOldPassword").value;
+  const password=document.getElementById("dashboardNewPassword").value;
+  const confirm=document.getElementById("dashboardConfirmPassword").value;
+  const msg=document.getElementById("dashboardPasswordMessage");
+  const btn=document.getElementById("saveDashboardPassword");
+  if(password.length<8||password!==confirm||password===oldPassword){
+    msg.textContent=password.length<8?"Password baru minimal 8 karakter.":password!==confirm?"Konfirmasi password tidak sama.":"Password baru harus berbeda dari password lama.";
+    msg.className="auth-message error";return;
+  }
+  btn.disabled=true;btn.textContent="Memverifikasi…";
+  try{
+    const {data:{user},error:sessionError}=await supabaseClient.auth.getUser();
+    if(sessionError||!user?.email)throw new Error("Sesi login tidak valid. Silakan login kembali.");
+    const {error:verifyError}=await supabaseClient.auth.signInWithPassword({email:user.email,password:oldPassword});
+    if(verifyError)throw new Error("Password lama tidak sesuai.");
+    btn.textContent="Menyimpan…";
+    const {error:updateError}=await supabaseClient.auth.updateUser({password});
+    if(updateError)throw updateError;
+    msg.textContent="Password berhasil diperbarui.";msg.className="auth-message success";
+    document.getElementById("dashboardChangePasswordForm").reset();
+    setTimeout(()=>document.getElementById("changePasswordModal").classList.remove("open"),1200);
+  }catch(err){msg.textContent=err.message||"Gagal mengganti password.";msg.className="auth-message error";}
+  finally{btn.disabled=false;btn.textContent="Perbarui Password";}
+});
+document.getElementById("changePhotoButton").addEventListener("click",()=>{
+  document.getElementById("profileDropdown").classList.remove("open");
+  document.getElementById("profilePhotoInput").click();
+});
+document.getElementById("profilePhotoInput").addEventListener("change",async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  if(file.size>2*1024*1024){alert("Ukuran foto maksimal 2 MB.");e.target.value="";return;}
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){alert("Gunakan foto JPG, PNG, atau WEBP.");e.target.value="";return;}
+  try{
+    const {data:{user},error:userError}=await supabaseClient.auth.getUser();if(userError||!user)throw new Error("Sesi login tidak valid.");
+    const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
+    const path=user.id+"/avatar."+ext;
+    const {error:uploadError}=await supabaseClient.storage.from("profile-photos").upload(path,file,{upsert:true,contentType:file.type});
+    if(uploadError)throw uploadError;
+    const {data:{publicUrl}}=supabaseClient.storage.from("profile-photos").getPublicUrl(path);
+    const {error:updateError}=await supabaseClient.from("profiles").update({avatar_url:publicUrl}).eq("id",user.id);
+    if(updateError)throw updateError;
+    const avatar=document.getElementById("profileAvatar");avatar.innerHTML='<img src="'+publicUrl+'?t='+Date.now()+'" alt="Foto profil">';
+    alert("Foto profil berhasil diperbarui.");
+  }catch(err){alert("Foto profil gagal diperbarui: "+(err.message||"Periksa koneksi dan izin penyimpanan."));}
+  finally{e.target.value="";}
+});
+document.getElementById("logoutButton").addEventListener("click",async()=>{
+  document.getElementById("profileDropdown").classList.remove("open");
+  const {error}=await supabaseClient.auth.signOut();
+  if(error)alert("Gagal logout: "+error.message);
+});
 document.getElementById("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=document.getElementById("loginButton");btn.disabled=true;btn.textContent="Memeriksa…";
   try{
