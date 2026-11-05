@@ -64,6 +64,15 @@
       <div class="auth-field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Masukkan password"></div>
       <button class="auth-primary" id="loginButton" type="submit">Masuk</button>
       <button class="auth-link" type="button" id="forgotButton">Lupa password?</button>
+      <button class="auth-link" type="button" id="changePasswordLink">Ganti password</button>
+    </form>
+    <form id="changePasswordForm" style="display:none">
+      <div class="auth-field"><label for="changeEmail">Email akun</label><input id="changeEmail" type="email" autocomplete="username" required placeholder="Email akun terdaftar"></div>
+      <div class="auth-field"><label for="oldPassword">Password lama</label><input id="oldPassword" type="password" autocomplete="current-password" required placeholder="Masukkan password lama"></div>
+      <div class="auth-field"><label for="changeNewPassword">Password baru</label><input id="changeNewPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Minimal 8 karakter"></div>
+      <div class="auth-field"><label for="changeConfirmPassword">Konfirmasi password baru</label><input id="changeConfirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Ulangi password baru"></div>
+      <button class="auth-primary" id="changePasswordButton" type="submit">Perbarui password</button>
+      <button class="auth-link" type="button" id="backToLoginButton">Kembali ke Login</button>
     </form>
     <form id="resetForm" style="display:none">
       <div class="auth-field"><label for="newPassword">Password baru</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Minimal 8 karakter"></div>
@@ -127,10 +136,10 @@ async function checkSupabaseConnection(){
 
 async function showAuth(mode,message="",kind=""){
   const gate=document.getElementById("authGate");
-  const login=document.getElementById("loginForm"),reset=document.getElementById("resetForm");
-  gate.style.display="flex";login.style.display=mode==="reset"?"none":"block";reset.style.display=mode==="reset"?"block":"none";
-  document.getElementById("authTitle").textContent=mode==="reset"?"Buat Password Baru":"Login";
-  document.getElementById("authSubtitle").textContent=mode==="reset"?"Atur password baru untuk akun DOKUMEN MUTU PLANT 2027":"DOKUMEN MUTU PLANT 2027";
+  const login=document.getElementById("loginForm"),reset=document.getElementById("resetForm"),change=document.getElementById("changePasswordForm");
+  gate.style.display="flex";login.style.display=mode==="login"?"block":"none";reset.style.display=mode==="reset"?"block":"none";change.style.display=mode==="change"?"block":"none";
+  document.getElementById("authTitle").textContent=mode==="reset"?"Buat Password Baru":mode==="change"?"Ganti Password":"Login";
+  document.getElementById("authSubtitle").textContent=mode==="reset"?"Atur password baru untuk akun DOKUMEN MUTU PLANT 2027":mode==="change"?"Verifikasi password lama untuk mengganti password akun":"DOKUMEN MUTU PLANT 2027";
   const box=document.getElementById("authMessage");box.textContent=message;box.className="auth-message"+(kind?" "+kind:"");box.style.display=message?"block":"none";
 }
 async function initializeAuthentication(){
@@ -155,6 +164,41 @@ document.getElementById("loginForm").addEventListener("submit",async e=>{
     await initializeAuthentication();
   }catch(err){await showAuth("login",err.message||"Login gagal. Periksa email dan password.","error");}
   finally{btn.disabled=false;btn.textContent="Masuk";}
+});
+document.getElementById("changePasswordLink").addEventListener("click",async()=>{
+  document.getElementById("changeEmail").value=document.getElementById("loginEmail").value.trim();
+  document.getElementById("oldPassword").value=document.getElementById("loginPassword").value;
+  await showAuth("change");
+});
+document.getElementById("backToLoginButton").addEventListener("click",async()=>{
+  document.getElementById("loginEmail").value=document.getElementById("changeEmail").value.trim();
+  await showAuth("login");
+});
+document.getElementById("changePasswordForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=document.getElementById("changeEmail").value.trim();
+  const oldPassword=document.getElementById("oldPassword").value;
+  const password=document.getElementById("changeNewPassword").value;
+  const confirm=document.getElementById("changeConfirmPassword").value;
+  if(password.length<8){await showAuth("change","Password baru minimal 8 karakter.","error");return;}
+  if(password!==confirm){await showAuth("change","Konfirmasi password baru tidak sama.","error");return;}
+  if(password===oldPassword){await showAuth("change","Password baru harus berbeda dari password lama.","error");return;}
+  const btn=document.getElementById("changePasswordButton");btn.disabled=true;btn.textContent="Memverifikasi…";
+  try{
+    const {error:verifyError}=await supabaseClient.auth.signInWithPassword({email,password:oldPassword});
+    if(verifyError)throw new Error("Password lama tidak sesuai atau akun tidak dapat diverifikasi.");
+    btn.textContent="Menyimpan…";
+    const {error:updateError}=await supabaseClient.auth.updateUser({password});
+    if(updateError)throw updateError;
+    await supabaseClient.auth.signOut();
+    document.getElementById("loginEmail").value=email;
+    document.getElementById("loginPassword").value="";
+    document.getElementById("oldPassword").value="";
+    document.getElementById("changeNewPassword").value="";
+    document.getElementById("changeConfirmPassword").value="";
+    await showAuth("login","Password berhasil diganti. Silakan login menggunakan password baru.","success");
+  }catch(err){await showAuth("change",err.message||"Gagal mengganti password.","error");}
+  finally{btn.disabled=false;btn.textContent="Perbarui password";}
 });
 document.getElementById("forgotButton").addEventListener("click",async()=>{
   const email=document.getElementById("loginEmail").value.trim();
