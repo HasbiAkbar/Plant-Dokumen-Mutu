@@ -43,8 +43,10 @@
 .auth-card h1{font-size:25px;margin:0 0 8px;color:#102b4e}
 .auth-sub{color:#718096;margin:0 0 24px}
 .auth-field{margin:14px 0}.auth-field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#34465d}
-.auth-field input{width:100%;padding:12px 13px;border:1px solid #d7e0eb;border-radius:9px;font:inherit;outline:none}
-.auth-field input:focus{border-color:#1769aa;box-shadow:0 0 0 3px #1769aa18}
+.auth-field input,.auth-field select{width:100%;height:50px;padding:12px 13px;border:1px solid #d7e0eb;border-radius:9px;font:inherit;font-size:14px;color:#17283d;background:#fff;outline:none;appearance:none;-webkit-appearance:none;box-shadow:0 1px 2px #102b4e08}
+.auth-field input:focus,.auth-field select:focus{border-color:#1769aa;box-shadow:0 0 0 3px #1769aa18}
+.auth-field select{padding-right:42px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b8096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer}
+.auth-field select option{color:#17283d;background:#fff;font:14px Inter,'Segoe UI',Arial,sans-serif}
 .auth-primary{width:100%;border:0;border-radius:9px;padding:13px;background:#1769aa;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px}
 .auth-primary:disabled{opacity:.6;cursor:wait}
 .auth-links{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 20px;margin-top:10px}
