@@ -493,6 +493,12 @@ async function updateTaskInSupabase(id,fields){
   if(error)throw error;
   await loadTasksFromSupabase();
 }
+async function deleteTaskFromSupabase(id){
+  if(appProfile?.role!=="Admin")throw new Error("Hanya Admin yang dapat menghapus penugasan.");
+  const {error}=await supabaseClient.from("tasks").delete().eq("id",id);
+  if(error)throw error;
+  await loadTasksFromSupabase();
+}
 function openPicForm(){document.getElementById("modalTitle").textContent="Tambah PIC / Pengguna";document.getElementById("formFields").innerHTML='<div class="field"><label>NIK</label><input name="nik" required></div><div class="field"><label>NAMA</label><input name="name" required></div><div class="field"><label>JABATAN</label><input name="position" required></div><div class="field"><label>EMAIL</label><input name="email" type="email" required></div><div class="field"><label>ROLE</label><select name="role"><option>Admin</option><option>User</option><option>Viewer</option></select></div>';mode="pic";document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
 document.getElementById('entryForm').onsubmit=async e=>{e.preventDefault();let f=Object.fromEntries(new FormData(e.target));try{if(mode==='document'){if(appProfile?.role!=='Admin')throw new Error('Hanya Admin yang dapat menambah master dokumen.');await saveDocumentToSupabase(f)}else if(mode==='pic'){f.email=f.email.trim().toLowerCase();if(data.pics.some(p=>p.nik===f.nik||p.email===f.email)){alert('NIK atau email sudah terdaftar.');return}data.pics.push({...f,id:Date.now()});save()}else if(mode==='task'){if(appProfile?.role!=='Admin'){alert('Hanya Admin yang dapat membuat penugasan.');return}await saveTaskToSupabase(f)}else if(mode==='task_update'){const id=document.getElementById('formFields').dataset.taskId;if(!id)throw new Error('ID penugasan tidak ditemukan.');await updateTaskInSupabase(id,f)}closeModal();e.target.reset()}catch(err){console.error(err);alert('Perubahan gagal disimpan ke Supabase: '+err.message)}};
@@ -556,9 +562,17 @@ function render(){
       ? '<a href="'+esc(t.draft_url)+'" target="_blank" rel="noopener" style="color:var(--blue);font-weight:700">Buka Draft ↗</a>'
       : '<span class="muted">Belum diisi</span>';
     const updateButton=canEdit?'<button class="btn secondary task-update-btn" data-task-id="'+esc(String(t.id))+'" style="padding:5px 8px;margin-left:6px">Update</button>':'';
-    return '<tr><td><b>'+esc(t.name)+'</b></td><td>'+esc(t.pic)+'</td><td>'+esc(t.priority)+'</td><td>'+esc(t.due||'—')+'</td><td>'+Number(t.progress||0)+'%</td><td>'+draft+'</td><td>'+badge(Number(t.progress)>=100?'Selesai':Number(t.progress)>0?'Dalam Proses':'Belum Dimulai')+updateButton+'</td></tr>';
+    const deleteButton=appProfile?.role==='Admin'?'<button class="btn danger task-delete-btn" data-task-id="'+esc(String(t.id))+'" style="padding:5px 8px;margin-left:6px">Hapus</button>':'';
+    return '<tr><td><b>'+esc(t.name)+'</b></td><td>'+esc(t.pic)+'</td><td>'+esc(t.priority)+'</td><td>'+esc(t.due||'—')+'</td><td>'+Number(t.progress||0)+'%</td><td>'+draft+'</td><td>'+badge(Number(t.progress)>=100?'Selesai':Number(t.progress)>0?'Dalam Proses':'Belum Dimulai')+updateButton+deleteButton+'</td></tr>';
   }).join('');
   taskBody.querySelectorAll('.task-update-btn').forEach(button=>button.addEventListener('click',()=>openTaskUpdate(button.dataset.taskId)));
+  taskBody.querySelectorAll('.task-delete-btn').forEach(button=>button.addEventListener('click',async()=>{
+    const task=data.tasks.find(t=>String(t.id)===String(button.dataset.taskId));if(!task)return;
+    if(!confirm('Hapus penugasan ini?\\n\\n'+task.name+' — PIC: '+task.pic+'\\n\\nData penugasan akan dihapus dari Supabase dan tidak dapat dipulihkan.'))return;
+    button.disabled=true;
+    try{await deleteTaskFromSupabase(task.id);alert('Penugasan berhasil dihapus.')}
+    catch(err){console.error(err);alert('Penugasan gagal dihapus: '+err.message);button.disabled=false}
+  }));
   document.getElementById('taskEmpty').classList.toggle('hidden',data.tasks.length>0);
   const todayISO=new Date().toLocaleDateString('en-CA');
   const latest=[...registryDocs].filter(d=>d.approvalDate&&/^\d{4}-\d{2}-\d{2}$/.test(d.approvalDate)&&d.approvalDate<=todayISO).sort((a,b)=>b.approvalDate.localeCompare(a.approvalDate)).slice(0,5);
