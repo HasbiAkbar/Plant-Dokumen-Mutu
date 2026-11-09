@@ -213,7 +213,8 @@ async function showAuth(mode,message="",kind=""){
 async function initializeAuthentication(){
   const {data:{session}}=await supabaseClient.auth.getSession();
   if(session){
-    const {data:profile,error}=await supabaseClient.from("profiles").select("full_name,role,is_active,avatar_url").eq("id",session.user.id).single();\n    appProfile=profile;
+    const {data:profile,error}=await supabaseClient.from("profiles").select("full_name,role,is_active,avatar_url").eq("id",session.user.id).single();
+    appProfile=profile;
     if(error||!profile||!profile.is_active){await supabaseClient.auth.signOut();await showAuth("login","Akun belum memiliki profil aktif. Hubungi Admin.","error");return;}
     document.getElementById("authGate").style.display="none";
     const displayName=profile.full_name||session.user.email;
