@@ -413,6 +413,7 @@ function renderRegistry(){const body=document.getElementById('registryRows');if(
 
 const key='plantDocPM_v1';let data=JSON.parse(localStorage.getItem(key)||'{"docs":[],"tasks":[],"pics":[]}');data.pics=data.pics||[];let mode='';
 let appProfile=null;
+function isAdmin(){return String(appProfile?.role||'').trim().toLowerCase()==='admin';}
 let teamProfiles=[];
 function save(){localStorage.setItem(key,JSON.stringify(data));render()}
 function page(p){const target=document.getElementById(p);if(!target||!target.classList.contains('page')){console.error('Halaman tidak ditemukan:',p);return}document.querySelectorAll('section.page').forEach(section=>{const show=section.id===p;section.classList.toggle('hidden',!show);section.hidden=!show;section.style.display=show?'block':'none'});document.querySelectorAll('.nav button[data-page]').forEach(button=>{const active=button.dataset.page===p;button.classList.toggle('active',active);button.setAttribute('aria-current',active?'page':'false')});const labels={dashboard:'Dashboard',documents:'Master Dokumen',tasks:'Penugasan',elements:'Elemen Plant',notifications:'Notifikasi',team:'Tim & PIC'};document.getElementById('crumb').textContent=labels[p]||p;window.currentPlantPage=p}
@@ -420,7 +421,7 @@ document.querySelectorAll('.nav button[data-page]').forEach(button=>{button.addE
 function openModal(type){mode=type;document.getElementById('modalTitle').textContent=type==='document'?'Tambah Dokumen':'Buat Penugasan';const assignablePics=data.pics.filter(p=>p.role==='User');const picOptions=assignablePics.map(p=>'<option value="'+esc(p.name)+'">'+esc(p.nik)+' — '+esc(p.name)+'</option>').join('');document.getElementById('formFields').innerHTML=type==='document'?'<div class="field"><label>Kode dokumen</label><input name="code" required placeholder="Contoh: BSS-SOP-PLA-001"></div><div class="field"><label>Nama dokumen</label><input name="name" required></div><div class="field"><label>Jenis</label><select name="kind"><option>SOP</option><option>WI</option><option>STD</option><option>FRM</option></select></div><div class="field"><label>Elemen Plant</label><input name="element" placeholder="Isi sesuai master elemen resmi"></div><div class="field"><label>Status</label><select name="status"><option>Belum Tersedia</option><option>Perlu Revisi</option><option>Existing</option></select></div><div class="field"><label>PIC</label><input name="pic" placeholder="Nama PIC"></div>':'<div class="field"><label>Nama pekerjaan / dokumen</label><input name="name" required placeholder="BSS-SOP-PLA-123"></div><div class="field"><label>PIC</label><select name="pic" required><option value="">Pilih PIC yang terdaftar</option>'+picOptions+'</select>'+(assignablePics.length?'':'<small class="muted">Belum ada akun User yang aktif dan disetujui. Minta user mendaftar, lalu Admin menyetujui akunnya di menu Tim & PIC.</small>')+'</div><div class="field"><label>Prioritas</label><select name="priority"><option>Normal</option><option>Tinggi</option><option>Urgent</option></select></div><div class="field"><label>Target penyelesaian</label><input name="due" type="date"></div><div class="field"><label>Progress awal (%)</label><input name="progress" type="number" min="0" max="100" value="0"></div>';document.getElementById('modal').classList.remove('hidden')}
 function openTaskUpdate(id){
   const task=data.tasks.find(t=>String(t.id)===String(id));if(!task)return;
-  const canEdit=appProfile&&(appProfile.role==="Admin"||(appProfile.role==="User"&&appProfile.full_name===task.pic));
+  const canEdit=appProfile&&(isAdmin()||(String(appProfile.role||"").trim().toLowerCase()==="user"&&appProfile.full_name===task.pic));
   if(!canEdit){alert("Anda tidak memiliki akses untuk memperbarui penugasan ini.");return;}
   mode="task_update";
   document.getElementById("modalTitle").textContent="Update Progress & Link Draft";
@@ -428,7 +429,7 @@ function openTaskUpdate(id){
   document.getElementById("modal").classList.remove("hidden");
 }
 async function migrateLocalDataToSupabase(){
-  if(appProfile?.role!=="Admin"){alert("Fitur migrasi hanya dapat dijalankan Admin.");return;}
+  if(!isAdmin()){alert("Fitur migrasi hanya dapat dijalankan Admin.");return;}
   if(localStorage.getItem("plantDocPM_supabase_migrated_v1")==="yes"){alert("Migrasi dari browser ini sudah pernah berhasil dijalankan.");return;}
   if(!confirm("Migrasikan data lama dari browser ini ke Supabase? Data sumber tidak akan dihapus."))return;
   try{
@@ -501,7 +502,7 @@ async function deleteTaskFromSupabase(id){
 }
 function openPicForm(){document.getElementById("modalTitle").textContent="Tambah PIC / Pengguna";document.getElementById("formFields").innerHTML='<div class="field"><label>NIK</label><input name="nik" required></div><div class="field"><label>NAMA</label><input name="name" required></div><div class="field"><label>JABATAN</label><input name="position" required></div><div class="field"><label>EMAIL</label><input name="email" type="email" required></div><div class="field"><label>ROLE</label><select name="role"><option>Admin</option><option>User</option><option>Viewer</option></select></div>';mode="pic";document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
-document.getElementById('entryForm').onsubmit=async e=>{e.preventDefault();let f=Object.fromEntries(new FormData(e.target));try{if(mode==='document'){if(appProfile?.role!=='Admin')throw new Error('Hanya Admin yang dapat menambah master dokumen.');await saveDocumentToSupabase(f)}else if(mode==='pic'){f.email=f.email.trim().toLowerCase();if(data.pics.some(p=>p.nik===f.nik||p.email===f.email)){alert('NIK atau email sudah terdaftar.');return}data.pics.push({...f,id:Date.now()});save()}else if(mode==='task'){if(appProfile?.role!=='Admin'){alert('Hanya Admin yang dapat membuat penugasan.');return}await saveTaskToSupabase(f)}else if(mode==='task_update'){const id=document.getElementById('formFields').dataset.taskId;if(!id)throw new Error('ID penugasan tidak ditemukan.');await updateTaskInSupabase(id,f)}closeModal();e.target.reset()}catch(err){console.error(err);alert('Perubahan gagal disimpan ke Supabase: '+err.message)}};
+document.getElementById('entryForm').onsubmit=async e=>{e.preventDefault();let f=Object.fromEntries(new FormData(e.target));try{if(mode==='document'){if(!isAdmin())throw new Error('Hanya Admin yang dapat menambah master dokumen.');await saveDocumentToSupabase(f)}else if(mode==='pic'){f.email=f.email.trim().toLowerCase();if(data.pics.some(p=>p.nik===f.nik||p.email===f.email)){alert('NIK atau email sudah terdaftar.');return}data.pics.push({...f,id:Date.now()});save()}else if(mode==='task'){if(appProfile?.role!=='Admin'){alert('Hanya Admin yang dapat membuat penugasan.');return}await saveTaskToSupabase(f)}else if(mode==='task_update'){const id=document.getElementById('formFields').dataset.taskId;if(!id)throw new Error('ID penugasan tidak ditemukan.');await updateTaskInSupabase(id,f)}closeModal();e.target.reset()}catch(err){console.error(err);alert('Perubahan gagal disimpan ke Supabase: '+err.message)}};
 function badge(s){let c=s==='Existing'||s==='Selesai'?'green':s==='Perlu Revisi'||s==='Dalam Proses'?'amber':s==='Belum Tersedia'?'red':'';return '<span class="status '+c+'">'+s+'</span>'}
 function renderDocs(){let q=(document.getElementById('docSearch')?.value||'').toLowerCase(),f=document.getElementById('docFilter')?.value||'';let a=data.docs.filter(d=>(!q||(d.code+' '+d.name).toLowerCase().includes(q))&&(!f||d.status===f));document.getElementById('docRows').innerHTML=a.map(d=>'<tr><td><b>'+esc(d.code)+'</b></td><td>'+esc(d.name)+'</td><td>'+esc(d.kind)+'</td><td>'+esc(d.element||'—')+'</td><td>'+badge(d.status)+'</td><td>'+esc(d.pic||'—')+'</td></tr>').join('');document.getElementById('docEmpty').classList.toggle('hidden',a.length>0)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -557,12 +558,12 @@ function render(){
   renderPics();
   const taskBody=document.getElementById('taskRows');
   taskBody.innerHTML=data.tasks.map(t=>{
-    const canEdit=appProfile&&(appProfile.role==='Admin'||(appProfile.role==='User'&&appProfile.full_name===t.pic));
+    const canEdit=appProfile&&(isAdmin()||(String(appProfile.role||"").trim().toLowerCase()==="user"&&appProfile.full_name===t.pic));
     const draft=t.draft_url&&/^https:\/\//i.test(t.draft_url)
       ? '<a href="'+esc(t.draft_url)+'" target="_blank" rel="noopener" style="color:var(--blue);font-weight:700">Buka Draft ↗</a>'
       : '<span class="muted">Belum diisi</span>';
     const updateButton=canEdit?'<button class="btn secondary task-update-btn" data-task-id="'+esc(String(t.id))+'" style="padding:5px 8px;margin-left:6px">Update</button>':'';
-    const deleteButton=appProfile?.role==='Admin'?'<button class="btn danger task-delete-btn" data-task-id="'+esc(String(t.id))+'" style="padding:5px 8px;margin-left:6px">Hapus</button>':'';
+    const deleteButton=isAdmin()?'<button class="btn danger task-delete-btn" data-task-id="'+esc(String(t.id))+'" style="padding:5px 8px;margin-left:6px">Hapus</button>':'';
     return '<tr><td><b>'+esc(t.name)+'</b></td><td>'+esc(t.pic)+'</td><td>'+esc(t.priority)+'</td><td>'+esc(t.due||'—')+'</td><td>'+Number(t.progress||0)+'%</td><td>'+draft+'</td><td>'+badge(Number(t.progress)>=100?'Selesai':Number(t.progress)>0?'Dalam Proses':'Belum Dimulai')+updateButton+deleteButton+'</td></tr>';
   }).join('');
   taskBody.querySelectorAll('.task-update-btn').forEach(button=>button.addEventListener('click',()=>openTaskUpdate(button.dataset.taskId)));
