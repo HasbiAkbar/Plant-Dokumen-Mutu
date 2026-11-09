@@ -422,6 +422,7 @@ function openTaskUpdate(id){
 }
 async function migrateLocalDataToSupabase(){
   if(appProfile?.role!=="Admin"){alert("Fitur migrasi hanya dapat dijalankan Admin.");return;}
+  if(localStorage.getItem("plantDocPM_supabase_migrated_v1")==="yes"){alert("Migrasi dari browser ini sudah pernah berhasil dijalankan.");return;}
   if(!confirm("Migrasikan data lama dari browser ini ke Supabase? Data sumber tidak akan dihapus."))return;
   try{
     const oldPM=JSON.parse(localStorage.getItem("plantDocPM_v1")||'{"docs":[],"tasks":[],"pics":[]}');
@@ -434,6 +435,7 @@ async function migrateLocalDataToSupabase(){
     const tasks=(oldPM.tasks||[]).filter(t=>t.name&&t.pic).map(t=>({name:t.name,pic:t.pic,priority:["Normal","Tinggi","Urgent"].includes(t.priority)?t.priority:"Normal",due:t.due||null,progress:Math.max(0,Math.min(100,Number(t.progress)||0)),status:t.status||"Belum Dimulai"}));
     if(tasks.length){const {error}=await supabaseClient.from("tasks").insert(tasks);if(error)throw error;tasksCount=tasks.length;}
     await loadProfilesFromSupabase();await loadTasksFromSupabase();await loadDocumentsFromSupabase();await loadRegistryFromSupabase();
+    localStorage.setItem("plantDocPM_supabase_migrated_v1","yes");
     alert("Migrasi selesai. Master dokumen: "+docsCount+"; Daftar induk: "+registryCount+"; Penugasan: "+tasksCount+". Data PIC lokal tidak diubah menjadi akun karena setiap user harus mendaftar melalui Daftar Akun.");
   }catch(error){console.error("Migrasi data lokal gagal:",error);alert("Migrasi belum selesai: "+error.message+". Data browser tidak dihapus; perbaiki error lalu coba lagi.");}
 }
