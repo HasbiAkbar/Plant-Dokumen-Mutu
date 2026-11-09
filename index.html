@@ -327,6 +327,7 @@ document.getElementById("signupForm").addEventListener("submit",async e=>{
   try{
     const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+"/",data:{full_name:fullName,nik,job_position:position}}});
     if(error)throw error;
+    if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0)throw new Error("Gmail ini sudah terdaftar. Gunakan alamat Gmail unik milik calon pengguna; satu Gmail hanya untuk satu akun.");
     if(data.user){document.getElementById("signupForm").reset();await showAuth("login","Pendaftaran berhasil dikirim. Periksa Gmail untuk verifikasi jika diminta. Akun menunggu persetujuan Admin sebelum dapat login.","success");}
     else await showAuth("signup","Pendaftaran belum dapat diproses. Periksa data dan coba kembali.","error");
   }catch(err){await showAuth("signup",err.message||"Pendaftaran gagal. Periksa NIK dan Gmail.","error");}
